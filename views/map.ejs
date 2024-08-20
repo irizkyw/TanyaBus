@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps with Socket.io and Chat Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Include Tailwind CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Font Awesome -->
+    <style>
+        img[alt~="Google"], .gmnoprint, .gm-fullscreen-control {
+            display: none;
+        }
+
+        #messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        #messages::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        #messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Map container -->
+    <div id="map" class="h-[60vh] w-full mb-5"></div> <!-- Adjust height here -->
+
+    <!-- Chat UI Toggle Button -->
+    <button id="toggle-chat-button" class="fixed bottom-6 right-6 md:bottom-8 md:right-8 p-4 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 z-50">
+        <i id="chat-icon" class="fas fa-comment text-lg"></i> <!-- Message icon -->
+    </button>
+
+    <!-- Chat UI -->
+    <div id="chat-container" class="w-full max-w-md bg-white p-4 rounded-lg shadow-lg fixed bottom-0 right-0 mb-4 mr-4 transform translate-y-full transition-transform duration-300 ease-in-out z-50">
+        <button id="close-chat-button" class="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700 focus:outline-none">
+            <i class="fas fa-times"></i> <!-- Close icon -->
+        </button>
+        <div id="messages" class="h-64 overflow-y-scroll border border-gray-300 p-3 mb-3 bg-gray-50 rounded-lg flex flex-col">
+            <!-- Messages will be appended here -->
+        </div>
+        <div id="input-container" class="flex">
+            <input id="message-input" type="text" placeholder="Type your message..." class="flex-1 p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="send-button" class="p-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Send</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&libraries=places&callback=initMap"
+        async
+        defer
+    ></script>
+    <script src="/script.js"></script>
+    <script>
+        // JavaScript to toggle chat container visibility
+        const toggleButton = document.getElementById('toggle-chat-button');
+        const chatContainer = document.getElementById('chat-container');
+        const chatIcon = document.getElementById('chat-icon');
+        const closeChatButton = document.getElementById('close-chat-button');
+
+        toggleButton.addEventListener('click', () => {
+            const isChatVisible = !chatContainer.classList.contains('translate-y-full');
+
+            if (isChatVisible) {
+                // Hide chat container
+                chatContainer.classList.add('translate-y-full');
+                chatContainer.classList.remove('translate-y-0');
+                chatIcon.classList.remove('fa-times'); // Remove close icon
+                chatIcon.classList.add('fa-comment'); // Add message icon
+            } else {
+                // Show chat container
+                chatContainer.classList.add('translate-y-0');
+                chatContainer.classList.remove('translate-y-full');
+                chatIcon.classList.remove('fa-comment'); // Remove message icon
+                chatIcon.classList.add('fa-times'); // Add close icon
+            }
+        });
+
+        closeChatButton.addEventListener('click', () => {
+            // Hide chat container when close button is clicked
+            chatContainer.classList.add('translate-y-full');
+            chatContainer.classList.remove('translate-y-0');
+            chatIcon.classList.remove('fa-times'); // Remove close icon
+            chatIcon.classList.add('fa-comment'); // Add message icon
+        });
+    </script>
+</body>
+</html>
