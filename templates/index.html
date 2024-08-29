@@ -42,12 +42,15 @@
             async
             defer
         ></script>
-
         <script src="{{ url_for('static', filename='assets/scripts/map.js') }}"></script>
+        <script
+            type="module"
+            src="{{ url_for('static', filename='assets/scripts/utilities.js') }}"
+        ></script>
         <script
             type="module"
             src="{{ url_for('static', filename='assets/scripts/llm.js') }}"
         ></script>
-        <script src="{{ url_for('static', filename='assets/scripts/script.js') }}"></script>
+        <script src="{{ url_for('static', filename='assets/scripts/general.js') }}"></script>
     </body>
 </html>
