@@ -62,6 +62,7 @@ body {
 .ai {
     background: #40414f;
     text-align: left;
+    border-radius: 10px;
 }
 
 .user {
