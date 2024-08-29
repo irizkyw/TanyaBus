@@ -48,8 +48,8 @@ def chat():
             bot_response = {
                 "message": "Here is your current location:",
                 "show_map": True,
-                "latitude": lat,
-                "longitude": lng
+                "lat": lat,
+                "lng": lng
             }
         except (ValueError, IndexError):
             bot_response = {

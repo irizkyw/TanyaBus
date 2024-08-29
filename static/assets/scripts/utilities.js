@@ -21,7 +21,7 @@ export function typeText(element, text) {
     } else {
       clearInterval(interval);
     }
-  }, 20);
+  }, 5);
 }
 
 export function generateUniqueId() {

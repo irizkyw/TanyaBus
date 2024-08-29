@@ -105,17 +105,23 @@ async function handleLocationRequest(messageDiv, uniqueId) {
 async function handleServerResponse(messageDiv, uniqueId, prompt) {
   try {
     const result = await fetchResponse(prompt);
-    console.log(result);
     clearLoader(uniqueId);
     messageDiv.innerHTML = "";
-    typeText(messageDiv, result.message);
+    await typeText(messageDiv, result.message);
+
     if (result.show_map) {
       const mapContainerId = generateUniqueId();
       const mapContainer = `<div id="${mapContainerId}" class="map-container"></div>`;
       setTimeout(() => {
         messageDiv.innerHTML += mapContainer;
-        createCustomMap(mapContainerId, result.latitude, result.longitude);
-      }, 1000);
+        createCustomMap(
+          mapContainerId,
+          result.x.lat,
+          result.x.lng,
+          result.y ? result.y.lat : null,
+          result.y ? result.y.lng : null,
+        );
+      }, 2000);
     }
   } catch (error) {
     console.error("Error:", error);

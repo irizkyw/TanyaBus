@@ -68,18 +68,18 @@ def generate_map_url(location, api_key):
 
 def get_lat_lng(location):
     api_key = "AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU"
-    
+
     base_url = "https://maps.googleapis.com/maps/api/geocode/json"
     params = {
         'address': location,
         'key': api_key
     }
-    
+
     try:
         response = requests.get(base_url, params=params)
         response.raise_for_status()  # Raise an error for bad HTTP status codes
         result = response.json()
-        
+
         if result['status'] == 'OK':
             location = result['results'][0]['geometry']['location']
             return location['lat'], location['lng']
@@ -87,7 +87,7 @@ def get_lat_lng(location):
             raise ValueError(f"Error from Google Maps API: {result['status']}")
     except requests.exceptions.RequestException as e:
         raise ValueError(f"Request failed: {e}")
-    
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -121,6 +121,8 @@ def chat():
                 "lng" : get_lat_lng(end_location)[1]
             }
 
+            response_data["show_map"] = True
+
         elif len(places) == 1:
             place = places[0]+" Bandung"
             response_data['DuckImage'] = get_random_duck_image()
@@ -128,6 +130,7 @@ def chat():
                 "lat" : get_lat_lng(place)[0],
                 "lng" : get_lat_lng(place)[1]
             }
+            response_data["show_map"] = True
         else:
             response_data['MapEmbed'] = None
             response_data['DuckImage'] = None
