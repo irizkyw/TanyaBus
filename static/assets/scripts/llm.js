@@ -114,7 +114,6 @@ async function handleServerResponse(messageDiv, uniqueId, prompt) {
       const mapContainer = `<div id="${mapContainerId}" class="map-container"></div>`;
       setTimeout(() => {
         messageDiv.innerHTML += mapContainer;
-        console.log(`Creating map in container with ID: ${mapContainerId}`);
         createCustomMap(mapContainerId, result.latitude, result.longitude);
       }, 1000);
     }
