@@ -66,6 +66,28 @@ def generate_map_url_route(start_location, end_location, api_key):
 def generate_map_url(location, api_key):
     return f"https://www.google.com/maps/embed/v1/place?key={api_key}&q={location}"
 
+def get_lat_lng(location):
+    api_key = "AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU"
+    
+    base_url = "https://maps.googleapis.com/maps/api/geocode/json"
+    params = {
+        'address': location,
+        'key': api_key
+    }
+    
+    try:
+        response = requests.get(base_url, params=params)
+        response.raise_for_status()  # Raise an error for bad HTTP status codes
+        result = response.json()
+        
+        if result['status'] == 'OK':
+            location = result['results'][0]['geometry']['location']
+            return location['lat'], location['lng']
+        else:
+            raise ValueError(f"Error from Google Maps API: {result['status']}")
+    except requests.exceptions.RequestException as e:
+        raise ValueError(f"Request failed: {e}")
+    
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -81,7 +103,6 @@ def chat():
     try:
         # Generate response from the AI model
         response = chat_session.send_message(user_input)
-        response = re.sub(r'\*\*.*?\*\*', '', response)
         chat_session.history.append({"role": "model", "parts": [response.text]})
 
         places = extract_location(user_input)
@@ -91,30 +112,21 @@ def chat():
         if len(places) == 2:
             start_location = places[0]
             end_location = places[1]
-            map_url = generate_map_url_route(start_location, end_location, os.getenv("GOOGLE_MAPS_API_KEY"))
-            lat1, lng1 = gmaps.geocode(start_location)[0]['geometry']['location'].values()
-            lat2, lng2 = gmaps.geocode(end_location)[0]['geometry']['location'].values()
-            response_data = {
-                "message": response.text,
-                "show_map": True,
-                "map_url": map_url,
-                "locations": [
-                    {"latitude": lat1, "longitude": lng1, "label": "start_location"},
-                    {"latitude": lat2, "longitude": lng2, "label": "end_location"}
-                ]
+            response_data["x"] = {
+                "lat" : get_lat_lng(start_location)[0],
+                "lng" : get_lat_lng(start_location)[1]
             }
+            response_data["y"] = {
+                "lat" : get_lat_lng(end_location)[0],
+                "lng" : get_lat_lng(end_location)[1]
+            }
+
         elif len(places) == 1:
             place = places[0]
-            map_url = generate_map_url(place, os.getenv("GOOGLE_MAPS_API_KEY"))
-            lat1, lng1 = gmaps.geocode(place)[0]['geometry']['location'].values()
-            response_data = {
-                "message": response.text,
-                "show_map": True,
-                "map_url": map_url,
-                "locations": [
-                    {"latitude": lat1, "longitude": lng1}
-                ],
-                "DuckImage": get_random_duck_image()
+            response_data['DuckImage'] = get_random_duck_image()
+            response_data['x'] = {
+                "lat" : get_lat_lng(place)[0],
+                "lng" : get_lat_lng(place)[1]
             }
         else:
             response_data['MapEmbed'] = None
