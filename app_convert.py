@@ -91,12 +91,32 @@ def chat():
             start_location = places[0]
             end_location = places[1]
             map_url = generate_map_url_route(start_location, end_location, os.getenv("GOOGLE_MAPS_API_KEY"))
-            response_data['MapEmbed'] = map_url
+            lat1, lng1 = gmaps.geocode(start_location)[0]['geometry']['location'].values()
+            lat2, lng2 = gmaps.geocode(end_location)[0]['geometry']['location'].values()
+            response_data['x'] = {
+                "message": response.text,
+                "show_map": True,
+                "latitude": lat1,
+                "longitude": lng1
+            }
+            response_data['y'] = {
+                "message": response.text,
+                "show_map": True,
+                "latitude": lat2,
+                "longitude": lng2
+            }
         elif len(places) == 1:
             place = places[0]
             map_url = generate_map_url(place, os.getenv("GOOGLE_MAPS_API_KEY"))
             response_data['MapEmbed'] = map_url
             response_data['DuckImage'] = get_random_duck_image()
+            lat1, lng1 = gmaps.geocode(place)[0]['geometry']['location'].values()
+            response_data['x'] = {
+                "message": response.text,
+                "show_map": True,
+                "latitude": lat1,
+                "longitude": lng1
+            }
         else:
             response_data['MapEmbed'] = None
             response_data['DuckImage'] = None
