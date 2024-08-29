@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hackathon Alibaba - Team Hura</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='assets/style.css') }}"
+        />
+    </head>
+    <body>
+        <div id="app" class="container">
+            <div id="chat_container"></div>
+            <form id="chat-form">
+                <textarea
+                    id="prompt-textarea"
+                    name="prompt"
+                    cols="1"
+                    rows="1"
+                    placeholder="Text here"
+                    oninput="autoResize(this)"
+                ></textarea>
+                <button type="submit">
+                    <img
+                        src="{{ url_for('static', filename='assets/icons/send.svg') }}"
+                    />
+                </button>
+            </form>
+        </div>
+
+        <script type="text/javascript">
+            window.botIcon =
+                "{{ url_for('static', filename='assets/icons/bot.svg') }}";
+            window.userIcon =
+                "{{ url_for('static', filename='assets/icons/user.svg') }}";
+            window.googleMapsApiKey = "AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU";
+        </script>
+
+        <script
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU&libraries=places"
+            async
+            defer
+        ></script>
+
+        <script src="{{ url_for('static', filename='assets/scripts/map.js') }}"></script>
+        <script
+            type="module"
+            src="{{ url_for('static', filename='assets/scripts/llm.js') }}"
+        ></script>
+        <script src="{{ url_for('static', filename='assets/scripts/script.js') }}"></script>
+    </body>
+</html>
