@@ -4,7 +4,6 @@ import requests
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import googlemaps
-from gtts import gTTS
 import google.generativeai as genai
 
 app = Flask(__name__)
@@ -29,7 +28,21 @@ model = genai.GenerativeModel(
     system_instruction=(
         "Anda adalah panduan transportasi berbasis AI yang terintegrasi dengan peta Google Maps. "
         "Anda dapat memberikan estimasi waktu perjalanan, kondisi real-time kendaraan umum, "
-        "informasi kepadatan lalu lintas, serta menjadi pemandu wisata virtual multibahasa."
+        "informasi kepadatan lalu lintas, serta menjadi pemandu wisata virtual multibahasa. "
+        "Jika ditanya tentang lokasi saat ini, sebutkan ITB Bandung. "
+        "Berikut adalah informasi tentang berbagai rute transportasi yang dapat Anda berikan: "
+        "K1 - TRANS METRO BANDUNG KORIDOR 1: Cibiru - Cibeureum; "
+        "K2 - TRANS METRO BANDUNG KORIDOR 2: Cicaheum - Cibeureum; "
+        "K3 - TRANS METRO BANDUNG KORIDOR 3: Cicaheum - Sarijadi; "
+        "K4 - TRANS METRO BANDUNG KORIDOR 4: Antapani - Leuwipanjang; "
+        "K5 - TRANS METRO BANDUNG KORIDOR 5: Antapani - Stasiun Hall; "
+        "F1 - TRANS METRO BANDUNG FEEDER 1: Stasiun Hall - Gunung Batu; "
+        "F2 - TRANS METRO BANDUNG FEEDER 2: Summarecon Mall - Cibeureum; "
+        "BS1 - BUS SEKOLAH KORIDOR 1: Antapani - Ledeng; "
+        "BS2 - BUS SEKOLAH KORIDOR 2: Leuwipanjang - Dago; "
+        "BS3 - BUS SEKOLAH KORIDOR 3: Cibiru - Alun Alun; "
+        "BS4 - BUS SEKOLAH KORIDOR 4: Cibiru - Cibeureum; "
+        "BDROS - Bandung Tour On The Bus."
     ),
 )
 
@@ -40,10 +53,18 @@ chat_session = model.start_chat(
             "role": "model",
             "parts": [
                 "Selamat datang! 👋 Saya adalah panduan transportasi dan wisata Anda di Jawa Barat. 😊"
+                "Apakah Anda ingin mengetahui estimasi waktu perjalanan, kondisi kendaraan umum, "
+                "atau informasi tentang tempat wisata di sekitar Anda? Saya siap membantu! 🌍🚌"
             ],
         }
     ]
 )
+
+def generate_map_url_route(start_location, end_location, api_key):
+    return f"https://www.google.com/maps/embed/v1/directions?key={api_key}&origin={start_location}&destination={end_location}&mode=transit"
+
+def generate_map_url(location, api_key):
+    return f"https://www.google.com/maps/embed/v1/place?key={api_key}&q={location}"
 
 @app.route('/')
 def index():
@@ -65,22 +86,20 @@ def chat():
         places = extract_location(user_input)
         response_data = {"message": response.text}
 
-        if "lokasi saya" in user_input.lower():
-            latitude, longitude = get_current_location()
-            if latitude and longitude:
-                response_data.update({
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "show_map": True,
-                })
-        elif places:
-            latitude, longitude = get_coordinates_from_location(places[0])
-            if latitude and longitude:
-                response_data.update({
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "show_map": True,
-                })
+        # Determine map URL and duck image URL based on the number of places
+        if len(places) == 2:
+            start_location = places[0]
+            end_location = places[1]
+            map_url = generate_map_url_route(start_location, end_location, os.getenv("GOOGLE_MAPS_API_KEY"))
+            response_data['MapEmbed'] = map_url
+        elif len(places) == 1:
+            place = places[0]
+            map_url = generate_map_url(place, os.getenv("GOOGLE_MAPS_API_KEY"))
+            response_data['MapEmbed'] = map_url
+            response_data['DuckImage'] = get_random_duck_image()
+        else:
+            response_data['MapEmbed'] = None
+            response_data['DuckImage'] = None
 
         return jsonify(response_data)
 
@@ -99,27 +118,13 @@ def extract_location(prompt):
     places = re.findall(pattern, response.text)
     return [place.strip() for place in places[0].split("', '")] if places else []
 
-def get_coordinates_from_location(location_name):
-    try:
-        geocode_result = gmaps.geocode(location_name)
-        if geocode_result:
-            location = geocode_result[0]['geometry']['location']
-            return location['lat'], location['lng']
-        else:
-            print(f"Geocoding failed for location: {location_name}")
-            return None, None
-    except Exception as e:
-        print(f"Error during geocoding: {e}")
-        return None, None
-
-def get_current_location():
-    try:
-        response = requests.get('https://ipapi.co/json/')
+def get_random_duck_image():
+    api_url = "https://random-d.uk/api/v2/random"
+    response = requests.get(api_url)
+    if response.status_code == 200:
         data = response.json()
-        return data['latitude'], data['longitude']
-    except Exception as e:
-        print(f"Error retrieving location: {e}")
-        return None, None
+        return data.get("url")
+    return None
 
 @app.route('/init-message', methods=['GET'])
 def init_message():
