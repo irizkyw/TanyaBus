@@ -103,7 +103,10 @@ def chat():
     try:
         # Generate response from the AI model
         response = chat_session.send_message(user_input)
-        response = re.sub(r'\*\*.*?\*\*', '', response)
+        try:
+            response = re.sub(r'\*\*.*?\*\*', '', response.text)
+        except:
+            pass
         chat_session.history.append({"role": "model", "parts": [response.text]})
 
         places = extract_location(user_input)
