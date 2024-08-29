@@ -105,10 +105,10 @@ async function handleLocationRequest(messageDiv, uniqueId) {
 async function handleServerResponse(messageDiv, uniqueId, prompt) {
   try {
     const result = await fetchResponse(prompt);
+    console.log(result);
     clearLoader(uniqueId);
     messageDiv.innerHTML = "";
     typeText(messageDiv, result.message);
-
     if (result.show_map) {
       const mapContainerId = generateUniqueId();
       const mapContainer = `<div id="${mapContainerId}" class="map-container"></div>`;
@@ -124,7 +124,6 @@ async function handleServerResponse(messageDiv, uniqueId, prompt) {
     messageDiv.innerHTML = "Error: " + error.message;
   }
 }
-
 
 async function initMessage() {
   const uniqueId = generateUniqueId();

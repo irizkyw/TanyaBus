@@ -21,7 +21,6 @@
                     placeholder="Ask me anything..."
                     oninput="autoResize(this); showSuggestions(this.value)"
                 ></textarea>
-                <div id="suggestions" class="suggestions-container"></div>
                 <button type="submit">
                     <img
                         src="{{ url_for('static', filename='assets/icons/send.svg') }}"
