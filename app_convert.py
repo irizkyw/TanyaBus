@@ -107,11 +107,11 @@ def chat():
 
         places = extract_location(user_input)
         response_data = {"message": response.text}
-
+        print(f"Extracted places: {places}")
         # Determine map URL and duck image URL based on the number of places
         if len(places) == 2:
-            start_location = places[0]
-            end_location = places[1]
+            start_location = places[0]+" Bandung"
+            end_location = places[1]+" Bandung"
             response_data["x"] = {
                 "lat" : get_lat_lng(start_location)[0],
                 "lng" : get_lat_lng(start_location)[1]
@@ -122,7 +122,7 @@ def chat():
             }
 
         elif len(places) == 1:
-            place = places[0]
+            place = places[0]+" Bandung"
             response_data['DuckImage'] = get_random_duck_image()
             response_data['x'] = {
                 "lat" : get_lat_lng(place)[0],
