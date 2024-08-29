@@ -1,18 +1,126 @@
-from flask import Flask, jsonify, request
+from flask import Flask, render_template, request, jsonify
+import google.generativeai as genai
 import os
 import requests
-from dotenv import load_dotenv
+import re
+from gtts import gTTS
+import googlemaps
 import math
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
 # Load environment variables
 load_dotenv()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = "AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU"
 
-# Google API Key
-API_KEY = os.getenv("GEMINI_API_KEY")
+# Initialize the GenerativeModel with custom system instruction
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
 
-# Function to get route from Google Maps API
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+    system_instruction=(
+        "Anda adalah panduan transportasi berbasis AI yang terintegrasi dengan peta Google Maps. "
+        "Anda dapat memberikan estimasi waktu perjalanan, kondisi real-time kendaraan umum, "
+        "informasi kepadatan lalu lintas, serta menjadi pemandu wisata virtual multibahasa. "
+        "Jika ditanya tentang lokasi saat ini, sebutkan ITB Bandung. "
+        "Berikut adalah informasi tentang berbagai rute transportasi yang dapat Anda berikan: "
+        "K1 - TRANS METRO BANDUNG KORIDOR 1: Cibiru - Cibeureum; "
+        "K2 - TRANS METRO BANDUNG KORIDOR 2: Cicaheum - Cibeureum; "
+        "K3 - TRANS METRO BANDUNG KORIDOR 3: Cicaheum - Sarijadi; "
+        "K4 - TRANS METRO BANDUNG KORIDOR 4: Antapani - Leuwipanjang; "
+        "K5 - TRANS METRO BANDUNG KORIDOR 5: Antapani - Stasiun Hall; "
+        "F1 - TRANS METRO BANDUNG FEEDER 1: Stasiun Hall - Gunung Batu; "
+        "F2 - TRANS METRO BANDUNG FEEDER 2: Summarecon Mall - Cibeureum; "
+        "BS1 - BUS SEKOLAH KORIDOR 1: Antapani - Ledeng; "
+        "BS2 - BUS SEKOLAH KORIDOR 2: Leuwipanjang - Dago; "
+        "BS3 - BUS SEKOLAH KORIDOR 3: Cibiru - Alun Alun; "
+        "BS4 - BUS SEKOLAH KORIDOR 4: Cibiru - Cibeureum; "
+        "BDROS - Bandung Tour On The Bus."
+    ),
+)
+
+# Initialize chat session
+chat_session = model.start_chat(
+    history=[
+        {
+            "role": "model",
+            "parts": [
+                "Selamat datang! 👋 Saya adalah panduan transportasi dan wisata Anda di Jawa Barat. 😊\n"
+                "Apakah Anda ingin mengetahui estimasi waktu perjalanan, kondisi kendaraan umum, "
+                "atau informasi tentang tempat wisata di sekitar Anda? Saya siap membantu! 🌍🚌"
+            ],
+        }
+    ]
+)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    user_input = request.json.get('message')
+    chat_session.history.append({"role": "user", "parts": [user_input]})
+
+    # Generate response from the AI model
+    response = chat_session.send_message(user_input)
+    chat_session.history.append({"role": "model", "parts": [response.text]})
+
+    # Extract locations from the model's response
+    places = extract_location(user_input)
+
+    # Convert text-to-speech and save as an audio file
+    tts = gTTS(response.text)
+    tts.save('response.mp3')
+
+    # Initialize Google Maps API for route and traffic data
+    if len(places) > 0:
+        location_name = places[0]
+        latitude, longitude = get_coordinates_from_location(api_key, location_name)
+        condition = get_traffic_condition(api_key, latitude, longitude, latitude+0.0001, longitude+0.0001)
+        vehicles_data = fetch_vehicle_data()
+        nearest_vehicle = find_nearest_vehicle(latitude, longitude, vehicles_data)
+        route = None
+
+        if len(places) == 2:
+            start_location = places[0]
+            end_location = places[1]
+            route = get_route(start_location, end_location, api_key)
+        
+        response_data = {
+            "response": response.text,
+            "location": location_name,
+            "latitude": latitude,
+            "longitude": longitude,
+            "traffic_condition": condition,
+            "nearest_vehicle": nearest_vehicle,
+            "route": route,
+        }
+    else:
+        response_data = {"response": response.text, "error": "Could not extract valid locations."}
+
+    return jsonify(response_data)
+
+# Utility functions
+def extract_location(prompt):
+    response = model.generate_content(
+        "Temukan semua konteks tempat dari kalimat berikut dan format dalam list Python yang dipisahkan oleh koma. Hindari nama negara atau nama daerah, fokus ke nama tempat saja. Misalnya: tempat = ['Telkom University', 'Alun-Alun Bandung']. Kalimat: '" + prompt + "'"
+    )
+
+    pattern = r"\['(.*?)'\]"
+    places = re.findall(pattern, response.text)
+    places = [place.strip() for place in places[0].split("', '")] if places else []
+    return places
+
 def get_route(start_location, end_location, api_key):
     api_url = "https://maps.googleapis.com/maps/api/directions/json"
     params = {
@@ -23,53 +131,15 @@ def get_route(start_location, end_location, api_key):
     response = requests.get(api_url, params=params)
     return response.json()
 
-# Function to get coordinates from a location name
-def get_coordinates_from_location(api_key, location_name):
-    url = f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=geometry&input={location_name}&inputtype=textquery&key={api_key}"
-    
-    response = requests.get(url)
-    data = response.json()
-    
-    if data.get('status') == 'OK' and 'candidates' in data and len(data['candidates']) > 0:
-        location = data['candidates'][0]['geometry']['location']
-        lat = location['lat']
-        lng = location['lng']
-        return lat, lng
-    else:
-        return None, None  # No coordinates found or an error occurred
-
-# Function to calculate the Haversine distance between two coordinates
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Earth radius in kilometers
-    lat1_rad = math.radians(lat1)
-    lon1_rad = math.radians(lon1)
-    lat2_rad = math.radians(lat2)
-    lon2_rad = math.radians(lon2)
-    
-    dlat = lat2_rad - lat1_rad
-    dlon = lon2_rad - lon1_rad
-    
-    a = (math.sin(dlat / 2) ** 2 +
-         math.cos(lat1_rad) * math.cos(lat2_rad) *
-         math.sin(dlon / 2) ** 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    
-    distance = R * c
-    return distance
-
-# Function to fetch vehicle data
 def fetch_vehicle_data():
     url = "https://bemo.uptangkutan-bandung.id/map/live-maps"
-    
     try:
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
-        
         if data.get("success"):
             vehicles = data.get("data", {}).get("result", {}).get("data", [])
             vehicle_list = []
-            
             for vehicle in vehicles:
                 vehicle_info = {
                     "ID": vehicle.get("id"),
@@ -79,75 +149,73 @@ def fetch_vehicle_data():
                     "GPS Longitude": vehicle.get("gps_position", {}).get("lng"),
                 }
                 vehicle_list.append(vehicle_info)
-            
             return vehicle_list
-        
         else:
             return {"error": "Failed to retrieve data: Success flag is False"}
-    
     except requests.RequestException as e:
         return {"error": f"Request failed: {e}"}
 
-# Function to find the nearest vehicle to a given location
-def find_nearest_vehicle(lat1, lon1, vehicles_data):
+def get_coordinates_from_location(api_key, location_name):
+    url = f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=geometry&input={location_name}&inputtype=textquery&key={api_key}"
+    response = requests.get(url)
+    data = response.json()
+    if data.get('status') == 'OK' and 'candidates' in data and len(data['candidates']) > 0:
+        location = data['candidates'][0]['geometry']['location']
+        lat = location['lat']
+        lng = location['lng']
+        return lat, lng
+    else:
+        return None, None  # No coordinates found or an error occurred
+
+def get_traffic_condition(api_key, start_lat, start_lng, end_lat, end_lng):
+    url = f"https://maps.googleapis.com/maps/api/directions/json?origin={start_lat},{start_lng}&destination={end_lat},{end_lng}&departure_time=now&traffic_model=best_guess&key={api_key}"
+    response = requests.get(url)
+    data = response.json()
+    if 'routes' in data and len(data['routes']) > 0:
+        legs = data['routes'][0]['legs']
+        if len(legs) > 0:
+            duration_in_traffic = legs[0].get('duration_in_traffic', {})
+            if 'text' in duration_in_traffic:
+                normal_duration = legs[0]['duration']['text']
+                traffic_duration = duration_in_traffic['text']
+                if 'min' in normal_duration and 'min' in traffic_duration:
+                    normal_duration_minutes = int(normal_duration.split()[0])
+                    traffic_duration_minutes = int(traffic_duration.split()[0])
+                    if traffic_duration_minutes > normal_duration_minutes + 5:
+                        return "macet"
+                    else:
+                        return "lancar"
+                return "lancar"
+    return "Tidak ada data"
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    a = (math.sin(dlat / 2) ** 2 +
+                 math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = R * c
+    return distance
+
+def find_nearest_vehicle(lat, lng, vehicles):
     nearest_vehicle = None
     min_distance = float('inf')
-    
-    for vehicle in vehicles_data:
-        lat2 = vehicle.get("GPS Latitude")
-        lon2 = vehicle.get("GPS Longitude")
-        
-        if lat2 is not None and lon2 is not None:
-            distance = haversine(lat1, lon1, lat2, lon2)
-            
+    for vehicle in vehicles:
+        vehicle_lat = vehicle.get("GPS Latitude")
+        vehicle_lng = vehicle.get("GPS Longitude")
+        if vehicle_lat and vehicle_lng:
+            distance = haversine(lat, lng, vehicle_lat, vehicle_lng)
             if distance < min_distance:
                 min_distance = distance
                 nearest_vehicle = vehicle
-    
     return nearest_vehicle
 
-# Endpoint to get the route between two locations
-@app.route('/api/route', methods=['POST'])
-def route():
-    data = request.json
-    start_location = data.get('start_location')
-    end_location = data.get('end_location')
-    
-    route_data = get_route(start_location, end_location, API_KEY)
-    
-    return jsonify(route_data)
-
-# Endpoint to get traffic condition between two locations
-@app.route('/api/traffic', methods=['POST'])
-def traffic():
-    data = request.json
-    start_location = data.get('start_location')
-    end_location = data.get('end_location')
-    
-    start_lat, start_lng = get_coordinates_from_location(API_KEY, start_location)
-    end_lat, end_lng = get_coordinates_from_location(API_KEY, end_location)
-    
-    if start_lat and start_lng and end_lat and end_lng:
-        traffic_data = get_traffic_condition(API_KEY, start_lat, start_lng, end_lat, end_lng)
-        return jsonify({"condition": traffic_data})
-    else:
-        return jsonify({"error": "Failed to get coordinates"}), 400
-
-# Endpoint to get nearest vehicle to a location
-@app.route('/api/nearest_vehicle', methods=['POST'])
-def nearest_vehicle():
-    data = request.json
-    location_name = data.get('location_name')
-    
-    latitude, longitude = get_coordinates_from_location(API_KEY, location_name)
-    vehicles_data = fetch_vehicle_data()
-    
-    if vehicles_data and latitude is not None and longitude is not None:
-        nearest_vehicle = find_nearest_vehicle(latitude, longitude, vehicles_data)
-        return jsonify(nearest_vehicle)
-    else:
-        return jsonify({"error": "Failed to retrieve vehicle data or coordinates"}), 400
-
-# Start Flask server
 if __name__ == '__main__':
     app.run(debug=True)
+
+       
