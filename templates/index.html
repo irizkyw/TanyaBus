@@ -1,80 +1,56 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Chatbot</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        #chatbox {
-            width: 400px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        #messages {
-            height: 200px;
-            overflow-y: auto;
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 10px;
-            padding: 5px;
-        }
-        #userInput {
-            width: calc(100% - 60px);
-            padding: 5px;
-        }
-        #sendBtn {
-            padding: 5px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div id="chatbox">
-        <div id="messages"></div>
-        <input type="text" id="userInput" placeholder="Type your message here...">
-        <button id="sendBtn">Send</button>
-    </div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hackathon Alibaba - Team Hura</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='assets/style.css') }}"
+        />
+    </head>
+    <body>
+        <div id="app" class="container">
+            <div id="chat_container"></div>
+            <form id="chat-form">
+                <textarea
+                    id="prompt-textarea"
+                    name="prompt"
+                    cols="1"
+                    rows="1"
+                    placeholder="Text here"
+                    oninput="autoResize(this)"
+                ></textarea>
+                <button type="submit">
+                    <img
+                        src="{{ url_for('static', filename='assets/icons/send.svg') }}"
+                    />
+                </button>
+            </form>
+        </div>
 
-    <script>
-        document.getElementById('sendBtn').addEventListener('click', function() {
-            let userInput = document.getElementById('userInput').value;
-            if (userInput.trim() === '') return;
+        <script type="text/javascript">
+            window.botIcon =
+                "{{ url_for('static', filename='assets/icons/bot.svg') }}";
+            window.userIcon =
+                "{{ url_for('static', filename='assets/icons/user.svg') }}";
+            window.googleMapsApiKey = "AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU";
+        </script>
 
-            let messageContainer = document.getElementById('messages');
-            let userMessage = document.createElement('div');
-            userMessage.textContent = 'You: ' + userInput;
-            messageContainer.appendChild(userMessage);
-            document.getElementById('userInput').value = '';
-
-            fetch('/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: userInput })
-            })
-            .then(response => response.json())
-            .then(data => {
-                let botMessage = document.createElement('div');
-                botMessage.textContent = 'Bot: ' + data.response;
-                messageContainer.appendChild(botMessage);
-                messageContainer.scrollTop = messageContainer.scrollHeight;
-            });
-        });
-
-        document.getElementById('userInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('sendBtn').click();
-            }
-        });
-    </script>
-</body>
+        <script
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU&libraries=places"
+            async
+            defer
+        ></script>
+        <script src="{{ url_for('static', filename='assets/scripts/map.js') }}"></script>
+        <script
+            type="module"
+            src="{{ url_for('static', filename='assets/scripts/utilities.js') }}"
+        ></script>
+        <script
+            type="module"
+            src="{{ url_for('static', filename='assets/scripts/llm.js') }}"
+        ></script>
+        <script src="{{ url_for('static', filename='assets/scripts/general.js') }}"></script>
+    </body>
 </html>
