@@ -81,6 +81,7 @@ def chat():
     try:
         # Generate response from the AI model
         response = chat_session.send_message(user_input)
+        response = re.sub(r'\*\*.*?\*\*', '', response)
         chat_session.history.append({"role": "model", "parts": [response.text]})
 
         places = extract_location(user_input)
@@ -93,29 +94,27 @@ def chat():
             map_url = generate_map_url_route(start_location, end_location, os.getenv("GOOGLE_MAPS_API_KEY"))
             lat1, lng1 = gmaps.geocode(start_location)[0]['geometry']['location'].values()
             lat2, lng2 = gmaps.geocode(end_location)[0]['geometry']['location'].values()
-            response_data['x'] = {
+            response_data = {
                 "message": response.text,
                 "show_map": True,
-                "latitude": lat1,
-                "longitude": lng1
-            }
-            response_data['y'] = {
-                "message": response.text,
-                "show_map": True,
-                "latitude": lat2,
-                "longitude": lng2
+                "map_url": map_url,
+                "locations": [
+                    {"latitude": lat1, "longitude": lng1, "label": "start_location"},
+                    {"latitude": lat2, "longitude": lng2, "label": "end_location"}
+                ]
             }
         elif len(places) == 1:
             place = places[0]
             map_url = generate_map_url(place, os.getenv("GOOGLE_MAPS_API_KEY"))
-            response_data['MapEmbed'] = map_url
-            response_data['DuckImage'] = get_random_duck_image()
             lat1, lng1 = gmaps.geocode(place)[0]['geometry']['location'].values()
-            response_data['x'] = {
+            response_data = {
                 "message": response.text,
                 "show_map": True,
-                "latitude": lat1,
-                "longitude": lng1
+                "map_url": map_url,
+                "locations": [
+                    {"latitude": lat1, "longitude": lng1}
+                ],
+                "DuckImage": get_random_duck_image()
             }
         else:
             response_data['MapEmbed'] = None
