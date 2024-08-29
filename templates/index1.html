@@ -1,80 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Chatbot</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        #chatbox {
-            width: 400px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        #messages {
-            height: 200px;
-            overflow-y: auto;
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 10px;
-            padding: 5px;
-        }
-        #userInput {
-            width: calc(100% - 60px);
-            padding: 5px;
-        }
-        #sendBtn {
-            padding: 5px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div id="chatbox">
-        <div id="messages"></div>
-        <input type="text" id="userInput" placeholder="Type your message here...">
-        <button id="sendBtn">Send</button>
-    </div>
+<!doctype html>
+<html>
+    <head>
+        <title>Voice to Text</title>
+    </head>
+    <body>
+        <button id="toggleButton">Start Voice Input</button>
+        <select id="languageSelect">
+            <option value="id-ID">Indonesian</option>
+            <option value="en-US">English</option>
+            <option value="zh-CN">Chinese</option>
+        </select>
+        <div id="output"></div>
 
-    <script>
-        document.getElementById('sendBtn').addEventListener('click', function() {
-            let userInput = document.getElementById('userInput').value;
-            if (userInput.trim() === '') return;
+        <script>
+            const toggleButton = document.getElementById("toggleButton");
+            const outputDiv = document.getElementById("output");
+            const languageSelect = document.getElementById("languageSelect");
 
-            let messageContainer = document.getElementById('messages');
-            let userMessage = document.createElement('div');
-            userMessage.textContent = 'You: ' + userInput;
-            messageContainer.appendChild(userMessage);
-            document.getElementById('userInput').value = '';
+            const recognition = new (window.SpeechRecognition ||
+                window.webkitSpeechRecognition ||
+                window.mozSpeechRecognition ||
+                window.msSpeechRecognition)();
+            recognition.continuous = true; // Allows continuous listening
 
-            fetch('/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: userInput })
-            })
-            .then(response => response.json())
-            .then(data => {
-                let botMessage = document.createElement('div');
-                botMessage.textContent = 'Bot: ' + data.response;
-                messageContainer.appendChild(botMessage);
-                messageContainer.scrollTop = messageContainer.scrollHeight;
-            });
-        });
+            let isListening = false;
 
-        document.getElementById('userInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('sendBtn').click();
+            // Function to update the recognition language
+            function updateLanguage() {
+                recognition.lang = languageSelect.value;
             }
-        });
-    </script>
-</body>
+
+            recognition.onstart = () => {
+                isListening = true;
+                toggleButton.textContent = "Stop Voice Input";
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = "";
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                outputDiv.textContent = transcript;
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                toggleButton.textContent = "Start Voice Input";
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                isListening = false;
+                toggleButton.textContent = "Start Voice Input";
+            };
+
+            toggleButton.addEventListener("click", () => {
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    updateLanguage(); // Update language before starting
+                    recognition.start();
+                }
+            });
+        </script>
+    </body>
 </html>
