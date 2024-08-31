@@ -7,7 +7,10 @@ import googlemaps
 from http import HTTPStatus
 import dashscope
 import time
+from time import gmtime, strftime
 from gtts import gTTS
+from langdetect import detect
+
 
 app = Flask(__name__)
 
@@ -94,6 +97,7 @@ def fetch_vehicle_data():
                     "ID": vehicle.get("id"),
                     "Vehicle_No": vehicle.get("vehicle_no"),
                     "Vehicle_Code": vehicle.get("vehicle_code"),
+                    "Online_Status": vehicle.get("online"),
                     "GPS_Latitude": vehicle.get("gps_position", {}).get("lat"),
                     "GPS_Longitude": vehicle.get("gps_position", {}).get("lng"),
                 }
@@ -194,9 +198,7 @@ def chat():
     # Construct the prompt for Alibaba AI
     places = extract_location(user_input)
     time.sleep(2)
-    
 
-    
     vehicles_data = fetch_vehicle_data()  # Replace with actual vehicle data
     # nearest_vehicle = "Nearest vehicle info here"  # Replace with actual nearest vehicle info
 
@@ -241,8 +243,9 @@ def chat():
             response_data['show_map'] = False
 
         response_data["message"] = re.sub(r'\*\*.*?\*\*', '', response)
-        print(jsonify(response_data))
-
+        
+        tts = gTTS(text=response_data["message"], lang=detect(response_data["message"]), slow=False)
+        tts.save("static/audio/haha.mp3")
         return jsonify(response_data)
 
     except Exception as e:
