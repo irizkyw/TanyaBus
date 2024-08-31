@@ -12,16 +12,33 @@ export function loader(element) {
   return loadInterval;
 }
 
+// export function typeText(element, text) {
+//   return new Promise((resolve) => {
+//     let index = 0;
+//     const interval = setInterval(() => {
+//       if (index < text.length) {
+//         element.innerHTML += text.charAt(index);
+//         index++;
+//       } else {
+//         clearInterval(interval);
+//         resolve(); // Resolve the promise once the text is fully typed out
+//       }
+//     }, 5);
+//   });
+// }
 export function typeText(element, text) {
-  let index = 0;
-  const interval = setInterval(() => {
-    if (index < text.length) {
-      element.innerHTML += text.charAt(index);
-      index++;
-    } else {
-      clearInterval(interval);
-    }
-  }, 5);
+  return new Promise((resolve) => {
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        element.innerHTML += text.charAt(index);
+        index++;
+      } else {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 5);
+  });
 }
 
 export function generateUniqueId() {

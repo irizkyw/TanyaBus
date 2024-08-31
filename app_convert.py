@@ -84,9 +84,13 @@ def get_lat_lng(location):
             location = result['results'][0]['geometry']['location']
             return location['lat'], location['lng']
         else:
-            raise ValueError(f"Error from Google Maps API: {result['status']}")
+            print(f"Error from Google Maps API: {result['status']}")
+            return None
+            # raise ValueError(f"Error from Google Maps API: {result['status']}")
     except requests.exceptions.RequestException as e:
-        raise ValueError(f"Request failed: {e}")
+        print(f"Request failed: {e}")
+        return None
+        # raise ValueError(f"Request failed: {e}")
 
 @app.route('/')
 def index():
@@ -125,7 +129,6 @@ def chat():
 
         elif len(places) == 1:
             place = places[0]+" Bandung"
-            response_data['DuckImage'] = get_random_duck_image()
             response_data['x'] = {
                 "lat" : get_lat_lng(place)[0],
                 "lng" : get_lat_lng(place)[1]

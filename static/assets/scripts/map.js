@@ -5,6 +5,10 @@
     lng,
     destLat = null,
     destLng = null,
+
+    busData = null,
+    updateInterval = 10000,
+    busDataUrl = null,
   ) {
     const mapElement = document.getElementById(mapContainerId);
     if (!mapElement) {
@@ -16,7 +20,6 @@
     console.log(`Latitude: ${lat}, Longitude: ${lng}`);
 
     const mapLocation = { lat: lat, lng: lng };
-
     const mapInstance = new google.maps.Map(mapElement, {
       zoom: 12,
       center: mapLocation,
@@ -56,5 +59,70 @@
     } else {
       console.log("Single location provided. Showing only this location.");
     }
+
+    // TODO: data buss
+    // function addBusMarkers(busData) {
+    //   if (busData && Array.isArray(busData)) {
+    //     console.log(`Adding ${busData.length} bus markers to the map.`);
+    //     busData.forEach((bus) => {
+    //       const busPosition = {
+    //         lat: parseFloat(bus.gps_position.lat),
+    //         lng: parseFloat(bus.gps_position.lng),
+    //       };
+
+    //       const busMarker = new google.maps.Marker({
+    //         position: busPosition,
+    //         map: mapInstance,
+    //         title: bus.vehicle_no,
+    //         icon: {
+    //           url: "bus-icon.png",
+    //           scaledSize: new google.maps.Size(32, 32),
+    //         },
+    //       });
+
+    //       const infoWindow = new google.maps.InfoWindow({
+    //         content: `
+    //           <div>
+    //             <h4>${bus.vehicle_no}</h4>
+    //             <p>Speed: ${bus.gps_position.speed} km/h</p>
+    //             <p>Odometer: ${
+    //               bus.gps_position.sensors.find((s) => s.name === "odometer")
+    //                 .value
+    //             }</p>
+    //             <p>Driver: ${
+    //               bus.gps_position.sensors.find((s) => s.name === "driver")
+    //                 .value
+    //             }</p>
+    //           </div>
+    //         `,
+    //       });
+
+    //       busMarker.addListener("click", () => {
+    //         infoWindow.open(mapInstance, busMarker);
+    //       });
+    //     });
+    //   } else {
+    //     console.log("No bus data provided.");
+    //   }
+    // }
+
+    // if (busData) {
+    //   addBusMarkers(busData);
+    // }
+
+    // if (busDataUrl) {
+    //   setInterval(async () => {
+    //     try {
+    //       const response = await fetch(busDataUrl);
+    //       if (!response.ok) {
+    //         throw new Error("Network response was not ok");
+    //       }
+    //       const newBusData = await response.json();
+    //       addBusMarkers(newBusData);
+    //     } catch (error) {
+    //       console.error("Error fetching bus data:", error);
+    //     }
+    //   }, updateInterval);
+    // }
   };
 })();

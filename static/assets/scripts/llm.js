@@ -107,13 +107,16 @@ async function handleServerResponse(messageDiv, uniqueId, prompt) {
     const result = await fetchResponse(prompt);
     clearLoader(uniqueId);
     messageDiv.innerHTML = "";
+
     await typeText(messageDiv, result.message);
 
     if (result.show_map) {
       const mapContainerId = generateUniqueId();
       const mapContainer = `<div id="${mapContainerId}" class="map-container"></div>`;
+
+      messageDiv.innerHTML += mapContainer;
+
       setTimeout(() => {
-        messageDiv.innerHTML += mapContainer;
         createCustomMap(
           mapContainerId,
           result.x.lat,
@@ -141,7 +144,7 @@ async function initMessage() {
     const result = await fetchResponse("hi bot");
     clearLoader(uniqueId);
     messageDiv.innerHTML = "";
-    typeText(messageDiv, result.message);
+    await typeText(messageDiv, result.message);
   } catch (error) {
     console.error("Error:", error);
     clearLoader(uniqueId);

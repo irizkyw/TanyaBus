@@ -1,67 +1,142 @@
 <!doctype html>
 <html>
     <head>
-        <title>Voice to Text</title>
+        <title>Realtime Bus Map</title>
+        <style>
+            #map {
+                height: 500px;
+                width: 100%;
+            }
+        </style>
+        <script
+            async
+            defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU&callback=initMap"
+        ></script>
     </head>
     <body>
-        <button id="toggleButton">Start Voice Input</button>
-        <select id="languageSelect">
-            <option value="id-ID">Indonesian</option>
-            <option value="en-US">English</option>
-            <option value="zh-CN">Chinese</option>
-        </select>
-        <div id="output"></div>
-
+        <h3>Realtime Bus Map</h3>
+        <div id="map"></div>
         <script>
-            const toggleButton = document.getElementById("toggleButton");
-            const outputDiv = document.getElementById("output");
-            const languageSelect = document.getElementById("languageSelect");
+            let map;
+            let busMarkers = {};
+            let busTails = {};
 
-            const recognition = new (window.SpeechRecognition ||
-                window.webkitSpeechRecognition ||
-                window.mozSpeechRecognition ||
-                window.msSpeechRecognition)();
-            recognition.continuous = true; // Allows continuous listening
+            // Inisialisasi peta
+            function initMap() {
+                const initialLocation = { lat: -6.951855, lng: 107.711073 }; // Lokasi awal
 
-            let isListening = false;
+                map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 12,
+                    center: initialLocation,
+                });
 
-            // Function to update the recognition language
-            function updateLanguage() {
-                recognition.lang = languageSelect.value;
+                // Mulai memperbarui lokasi bus setiap beberapa detik
+                setInterval(updateBusLocations, 5000); // 5 detik interval
             }
 
-            recognition.onstart = () => {
-                isListening = true;
-                toggleButton.textContent = "Stop Voice Input";
-            };
+            // Fungsi untuk memperbarui lokasi bus
+            function updateBusLocations() {
+                const busData = [
+                    {
+                        id: 2311152024588556,
+                        vehicle_no: "D 7880 AQ - BANDROS PINK",
+                        vehicle_code: "BDROS PINK MUDA",
+                        gps_position: {
+                            lat: -6.951855,
+                            lng: 107.711073,
+                            course: 180,
+                            speed: 43,
+                            tail: [
+                                { lat: "-6.95042", lng: "107.7111183" },
+                                { lat: "-6.9508", lng: "107.7111083" },
+                                { lat: "-6.95101", lng: "107.711105" },
+                                { lat: "-6.9512066", lng: "107.7110949" },
+                                { lat: "-6.9514199", lng: "107.71108" },
+                                { lat: "-6.951855", lng: "107.7110733" },
+                            ],
+                        },
+                    },
+                    {
+                        id: 2203241339348697,
+                        vehicle_no: "D 7696 AQ - FEEDER 2 (SUMMARECON)",
+                        gps_position: {
+                            lat: -6.945463,
+                            lng: 107.688935,
+                            course: 189,
+                            speed: 16,
+                            tail: [
+                                { lat: "-6.9442266", lng: "107.689085" },
+                                { lat: "-6.94463", lng: "107.6890316" },
+                                { lat: "-6.9450366", lng: "107.68898" },
+                                { lat: "-6.9449833", lng: "107.6887516" },
+                                { lat: "-6.9449599", lng: "107.6889633" },
+                                { lat: "-6.9454633", lng: "107.688935" },
+                            ],
+                        },
+                    },
+                ];
 
-            recognition.onresult = (event) => {
-                let transcript = "";
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript;
-                }
-                outputDiv.textContent = transcript;
-            };
+                busData.forEach((bus) => {
+                    const { id, vehicle_no, gps_position } = bus;
+                    const { lat, lng, course, tail } = gps_position;
 
-            recognition.onend = () => {
-                isListening = false;
-                toggleButton.textContent = "Start Voice Input";
-            };
+                    // Jika marker untuk bus ini belum ada, buat yang baru
+                    if (!busMarkers[id]) {
+                        busMarkers[id] = new google.maps.Marker({
+                            position: { lat: lat, lng: lng },
+                            map: map,
+                            title: vehicle_no,
+                            icon: {
+                                path: google.maps.SymbolPath
+                                    .FORWARD_CLOSED_ARROW,
+                                scale: 5,
+                                rotation: course,
+                            },
+                        });
+                    } else {
+                        // Jika marker sudah ada, perbarui posisinya
+                        busMarkers[id].setPosition({ lat: lat, lng: lng });
+                        busMarkers[id].setIcon({
+                            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                            scale: 5,
+                            rotation: course,
+                        });
+                    }
 
-            recognition.onerror = (event) => {
-                console.error("Speech recognition error:", event.error);
-                isListening = false;
-                toggleButton.textContent = "Start Voice Input";
-            };
+                    // Jika bus tail belum ada, buat yang baru
+                    if (!busTails[id]) {
+                        const tailPath = tail.map((point) => {
+                            return {
+                                lat: parseFloat(point.lat),
+                                lng: parseFloat(point.lng),
+                            };
+                        });
 
-            toggleButton.addEventListener("click", () => {
-                if (isListening) {
-                    recognition.stop();
-                } else {
-                    updateLanguage(); // Update language before starting
-                    recognition.start();
-                }
-            });
+                        busTails[id] = new google.maps.Polyline({
+                            path: tailPath,
+                            geodesic: true,
+                            strokeColor: "#00BFFF",
+                            strokeOpacity: 1.0,
+                            strokeWeight: 2,
+                        });
+
+                        busTails[id].setMap(map);
+                    } else {
+                        // Jika bus tail sudah ada, perbarui rutenya
+                        const tailPath = tail.map((point) => {
+                            return {
+                                lat: parseFloat(point.lat),
+                                lng: parseFloat(point.lng),
+                            };
+                        });
+
+                        busTails[id].setPath(tailPath);
+                    }
+                });
+            }
+
+            window.initMap = initMap;
         </script>
     </body>
 </html>
