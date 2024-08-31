@@ -180,6 +180,11 @@ def extract_location(prompt):
 def index():
     return render_template('index.html')
 
+@app.route('/realtimeData', methods=['GET'])
+def realtimeData():
+    vehicles_data = fetch_vehicle_data()
+    return jsonify(vehicles_data)
+
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json.get('prompt')
@@ -193,9 +198,6 @@ def chat():
 
     
     vehicles_data = fetch_vehicle_data()  # Replace with actual vehicle data
-
-    
-    print(vehicles_data)
     # nearest_vehicle = "Nearest vehicle info here"  # Replace with actual nearest vehicle info
 
     print(f"Extracted places: {places}")
