@@ -190,8 +190,12 @@ def chat():
     places = extract_location(user_input)
     time.sleep(2)
     
+
     
     vehicles_data = fetch_vehicle_data()  # Replace with actual vehicle data
+
+    
+    print(vehicles_data)
     # nearest_vehicle = "Nearest vehicle info here"  # Replace with actual nearest vehicle info
 
     print(f"Extracted places: {places}")
