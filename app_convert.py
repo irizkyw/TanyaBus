@@ -254,7 +254,7 @@ def chat():
         filepath = os.path.join("static", "audio", filename)
         tts.save(filepath)
 
-        response_data["audio"] = "static/audio/"+filepath+".mp3"
+        response_data["audio"] = filepath
         return jsonify(response_data)
 
     except Exception as e:
