@@ -10,6 +10,8 @@ import time
 from time import gmtime, strftime
 from gtts import gTTS
 from langdetect import detect
+from playsound import playsound
+
 
 
 app = Flask(__name__)
@@ -245,7 +247,8 @@ def chat():
         response_data["message"] = re.sub(r'\*\*.*?\*\*', '', response)
         
         tts = gTTS(text=response_data["message"], lang=detect(response_data["message"]), slow=False)
-        tts.save("static/audio/haha.mp3")
+        tts.save("static/audio/audio.mp3")
+        response_data["audio"] = "static/audio/haha.mp3"
         return jsonify(response_data)
 
     except Exception as e:
@@ -258,6 +261,7 @@ def init_message():
     try:
         response = call_alibaba_model("Hi bot")
         time.sleep(1)
+        playsound("static/audio/audio.mp3")
         return jsonify({"message": response})
     except Exception as e:
         print(f"Error: {e}")
