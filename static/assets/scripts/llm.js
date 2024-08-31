@@ -116,17 +116,28 @@ async function handleServerResponse(messageDiv, uniqueId, prompt) {
 
       messageDiv.innerHTML += mapContainer;
 
-      setTimeout(() => {
+      setTimeout(async () => {
+        let realTimeData = null;
+        try {
+          const response = await fetch("/realtimeData");
+          if (response.ok) {
+            realTimeData = await response.json();
+          } else {
+            console.error("Failed to fetch real-time data");
+          }
+        } catch (error) {
+          console.error("Error fetching real-time data:", error);
+        }
+
         createCustomMap(
           mapContainerId,
           result.x.lat,
           result.x.lng,
           result.y ? result.y.lat : null,
           result.y ? result.y.lng : null,
-          null,
+          realTimeData,
           10000,
-          null,
-          window.routeFiles,
+          "/realtimeData",
         );
       }, 2000);
     }
