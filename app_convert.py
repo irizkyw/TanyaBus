@@ -139,6 +139,7 @@ def chat():
             response_data['DuckImage'] = None
 
         response_data["message"] = re.sub(r'\*\*.*?\*\*', '', response.text)
+        print(jsonify(response_data))
         return jsonify(response_data)
 
     except Exception as e:
