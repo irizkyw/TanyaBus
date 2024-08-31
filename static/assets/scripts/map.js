@@ -44,15 +44,24 @@
         title: "Destination",
       });
 
-      const line = new google.maps.Polyline({
-        path: [mapLocation, destinationLocation],
-        geodesic: true,
-        strokeColor: "#FF0000",
-        strokeOpacity: 1.0,
-        strokeWeight: 2,
-      });
+      // Requesting and displaying the route
+      const directionsService = new google.maps.DirectionsService();
+      const directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(mapInstance);
 
-      line.setMap(mapInstance);
+      const request = {
+        origin: mapLocation,
+        destination: destinationLocation,
+        travelMode: google.maps.TravelMode.DRIVING, // You can change this to 'WALKING', 'BICYCLING', 'TRANSIT'
+      };
+
+      directionsService.route(request, (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+          directionsRenderer.setDirections(result);
+        } else {
+          console.error("Directions request failed due to " + status);
+        }
+      });
 
       const transitLayer = new google.maps.TransitLayer();
       transitLayer.setMap(mapInstance);
@@ -60,7 +69,7 @@
       console.log("Single location provided. Showing only this location.");
     }
 
-    // TODO: data buss
+    // TODO: bus data functionality
     // function addBusMarkers(busData) {
     //   if (busData && Array.isArray(busData)) {
     //     console.log(`Adding ${busData.length} bus markers to the map.`);
