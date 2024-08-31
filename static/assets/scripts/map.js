@@ -183,7 +183,7 @@
     const transitLayer = new google.maps.TransitLayer();
     transitLayer.setMap(mapInstance);
 
-    const markers = new Map(); // Use a Map for better performance in finding and updating markers
+    const markers = new Map();
 
     function animate(marker, newPosition, duration) {
       const startPos = marker.getPosition();
@@ -219,40 +219,47 @@
             lng: parseFloat(bus.GPS_Longitude),
           };
 
-          let busMarker = markers.get(bus.Vehicle_No);
+          if (bus.Online_Status) {
+            let busMarker = markers.get(bus.Vehicle_No);
 
-          if (busMarker) {
-            // Animate existing marker to new position
-            animate(busMarker, busPosition, 2000);
+            if (busMarker) {
+              animate(busMarker, busPosition, 2000);
+            } else {
+              busMarker = new google.maps.Marker({
+                position: busPosition,
+                map: mapInstance,
+                title: bus.Vehicle_No,
+                icon: {
+                  url: busIcon,
+                  scaledSize: new google.maps.Size(32, 32),
+                },
+              });
+
+              const infoWindow = new google.maps.InfoWindow({
+                content: `<div><h5>${bus.Vehicle_No}</h5><p>Status: ${bus.Online_Status ? "Online" : "Offline"}</p></div>`,
+              });
+
+              busMarker.addListener("click", () => {
+                infoWindow.open(mapInstance, busMarker);
+              });
+
+              markers.set(bus.Vehicle_No, busMarker);
+            }
           } else {
-            // Create new marker and add to the map
-            busMarker = new google.maps.Marker({
-              position: busPosition,
-              map: mapInstance,
-              title: bus.Vehicle_No,
-              icon: {
-                url:
-                  busIcon ||
-                  "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                scaledSize: new google.maps.Size(32, 32),
-              },
-            });
-
-            const infoWindow = new google.maps.InfoWindow({
-              content: `<div><h5>${bus.Vehicle_No}</h5></div>`,
-            });
-
-            busMarker.addListener("click", () => {
-              infoWindow.open(mapInstance, busMarker);
-            });
-
-            markers.set(bus.Vehicle_No, busMarker); // Store the marker reference
+            let busMarker = markers.get(bus.Vehicle_No);
+            if (busMarker) {
+              busMarker.setMap(null);
+              markers.delete(bus.Vehicle_No);
+            }
           }
         });
 
-        // Remove markers that are no longer in the new busData
         markers.forEach((marker, vehicleNo) => {
-          if (!busData.find((bus) => bus.Vehicle_No === vehicleNo)) {
+          if (
+            !busData.find(
+              (bus) => bus.Vehicle_No === vehicleNo && bus.Online_Status,
+            )
+          ) {
             marker.setMap(null);
             markers.delete(vehicleNo);
           }

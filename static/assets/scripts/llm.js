@@ -108,7 +108,22 @@ async function handleServerResponse(messageDiv, uniqueId, prompt) {
     clearLoader(uniqueId);
     messageDiv.innerHTML = "";
 
+    const messageParagraph = document.createElement("p");
+    messageParagraph.textContent = result.message;
+    messageDiv.appendChild(messageParagraph);
+
     await typeText(messageDiv, result.message);
+
+    if (result.audio) {
+      const audioElement = document.createElement("audio");
+      audioElement.src = result.audio;
+      audioElement.controls = true;
+      audioElement.autoplay = false;
+      audioElement.style.width = "100%";
+      audioElement.style.marginTop = "30px";
+
+      messageDiv.appendChild(audioElement);
+    }
 
     if (result.show_map) {
       const mapContainerId = generateUniqueId();
