@@ -11,7 +11,7 @@ from datetime import datetime
 from time import gmtime, strftime
 from gtts import gTTS
 from langdetect import detect
-from playsound import playsound
+
 
 
 
