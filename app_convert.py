@@ -7,6 +7,8 @@ import googlemaps
 from http import HTTPStatus
 import dashscope
 import time
+from gtts import gTTS
+
 app = Flask(__name__)
 
 # Load environment variables
@@ -194,7 +196,7 @@ def chat():
 
     print(f"Extracted places: {places}")
     response_text = (
-        f"Data Kendaraan Umum Real Time:\n{vehicles_data}\n\n"
+        #f"Data Kendaraan Umum Real Time:\n{vehicles_data}\n\n"
         #f"Kondisi Sekitar kita: {get_traffic_condition(api_key, latitude, longitude, latitude + 0.0001, longitude + 0.0001)}\n\n"
         #f"Kendaraan Terdekat:\n{nearest_vehicle}\n\n"
         f"Prompt: {user_input}"
@@ -208,7 +210,6 @@ def chat():
             return jsonify({"error": "Failed to get response from AI model."}), 500
         
         response_data = {"message": response}
-        print(response_data)
 
         # Determine map URL based on the number of places
         if len(places) == 2:
@@ -235,6 +236,7 @@ def chat():
 
         response_data["message"] = re.sub(r'\*\*.*?\*\*', '', response)
         print(jsonify(response_data))
+
         return jsonify(response_data)
 
     except Exception as e:
@@ -245,7 +247,8 @@ def chat():
 @app.route('/init-message', methods=['GET'])
 def init_message():
     try:
-        response = "Selamat datang! 👋 Saya adalah panduan transportasi dan wisata Anda di Jawa Barat. 😊 Apakah Anda ingin mengetahui estimasi waktu perjalanan, kondisi kendaraan umum, atau informasi tentang tempat wisata di sekitar Anda? Saya siap membantu! 🌍🚌"
+        response = call_alibaba_model("Hi bot")
+        time.sleep(1)
         return jsonify({"message": response})
     except Exception as e:
         print(f"Error: {e}")
