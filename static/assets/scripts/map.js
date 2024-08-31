@@ -5,10 +5,10 @@
     lng,
     destLat = null,
     destLng = null,
-
     busData = null,
     updateInterval = 10000,
     busDataUrl = null,
+    kmlUrl = null,
   ) {
     const mapElement = document.getElementById(mapContainerId);
     if (!mapElement) {
@@ -20,10 +20,17 @@
     console.log(`Latitude: ${lat}, Longitude: ${lng}`);
 
     const mapLocation = { lat: lat, lng: lng };
+
+    const grayscaleStyle = [
+      // Your grayscale style settings
+    ];
+
     const mapInstance = new google.maps.Map(mapElement, {
       zoom: 12,
       center: mapLocation,
       gestureHandling: "auto",
+      disableDefaultUI: true,
+      styles: grayscaleStyle,
     });
 
     new google.maps.Marker({
@@ -44,7 +51,6 @@
         title: "Destination",
       });
 
-      // Requesting and displaying the route
       const directionsService = new google.maps.DirectionsService();
       const directionsRenderer = new google.maps.DirectionsRenderer();
       directionsRenderer.setMap(mapInstance);
@@ -52,7 +58,7 @@
       const request = {
         origin: mapLocation,
         destination: destinationLocation,
-        travelMode: google.maps.TravelMode.DRIVING, // You can change this to 'WALKING', 'BICYCLING', 'TRANSIT'
+        travelMode: google.maps.TravelMode.TRANSIT,
       };
 
       directionsService.route(request, (result, status) => {
@@ -62,70 +68,21 @@
           console.error("Directions request failed due to " + status);
         }
       });
-
-      const transitLayer = new google.maps.TransitLayer();
-      transitLayer.setMap(mapInstance);
     } else {
       console.log("Single location provided. Showing only this location.");
     }
 
-    // TODO: bus data functionality
-    // function addBusMarkers(busData) {
-    //   if (busData && Array.isArray(busData)) {
-    //     console.log(`Adding ${busData.length} bus markers to the map.`);
-    //     busData.forEach((bus) => {
-    //       const busPosition = {
-    //         lat: parseFloat(bus.gps_position.lat),
-    //         lng: parseFloat(bus.gps_position.lng),
-    //       };
+    const transitLayer = new google.maps.TransitLayer();
+    transitLayer.setMap(mapInstance);
 
-    //       const busMarker = new google.maps.Marker({
-    //         position: busPosition,
-    //         map: mapInstance,
-    //         title: bus.vehicle_no,
-    //         icon: {
-    //           url: "bus-icon.png",
-    //           scaledSize: new google.maps.Size(32, 32),
-    //         },
-    //       });
-
-    //       const infoWindow = new google.maps.InfoWindow({
-    //         content: `
-    //           <div>
-    //             <h4>${bus.vehicle_no}</h4>
-    //             <p>Speed: ${bus.gps_position.speed} km/h</p>
-    //             <p>Odometer: ${
-    //               bus.gps_position.sensors.find((s) => s.name === "odometer")
-    //                 .value
-    //             }</p>
-    //             <p>Driver: ${
-    //               bus.gps_position.sensors.find((s) => s.name === "driver")
-    //                 .value
-    //             }</p>
-    //           </div>
-    //         `,
-    //       });
-
-    //       busMarker.addListener("click", () => {
-    //         infoWindow.open(mapInstance, busMarker);
-    //       });
-    //     });
-    //   } else {
-    //     console.log("No bus data provided.");
-    //   }
-    // }
-
-    // if (busData) {
-    //   addBusMarkers(busData);
-    // }
-
+    // Uncomment and implement bus data functionality if needed
+    // function addBusMarkers(busData) { /* Your existing code */ }
+    // if (busData) { addBusMarkers(busData); }
     // if (busDataUrl) {
     //   setInterval(async () => {
     //     try {
     //       const response = await fetch(busDataUrl);
-    //       if (!response.ok) {
-    //         throw new Error("Network response was not ok");
-    //       }
+    //       if (!response.ok) { throw new Error("Network response was not ok"); }
     //       const newBusData = await response.json();
     //       addBusMarkers(newBusData);
     //     } catch (error) {

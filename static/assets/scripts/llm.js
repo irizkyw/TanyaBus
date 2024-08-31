@@ -123,6 +123,10 @@ async function handleServerResponse(messageDiv, uniqueId, prompt) {
           result.x.lng,
           result.y ? result.y.lat : null,
           result.y ? result.y.lng : null,
+          null,
+          10000,
+          null,
+          window.routeFiles,
         );
       }, 2000);
     }
