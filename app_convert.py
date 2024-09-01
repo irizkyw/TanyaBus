@@ -301,21 +301,22 @@ def chat():
 
         #response_data["message"] = re.sub(r'\*\*.*?\*\*', '', response)
         response_data["message"] = response.replace("**", "")
-        
         tts = gTTS(text=response_data["message"], lang=detect(response_data["message"]), slow=False)
 
         filename =  f"audio_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".mp3"
         filepath = os.path.join("static", "audio", filename)
         tts.save(filepath)
 
-        coordinat_list = coordinateRouteResponse(response, places)
-        print(coordinat_list)
-        route_url = generate_route_url_waypoint(coordinat_list, os.getenv("GOOGLE_MAPS_API_KEY"))
-        response_data["route_url"] = route_url
-        print(route_url)
-
+        try:
+            coordinat_list = coordinateRouteResponse(response, places)
+            route_url = generate_route_url_waypoint(coordinat_list, os.getenv("GOOGLE_MAPS_API_KEY"))
+            response_data["route_url"] = route_url
+            response_data["message"] += "\n\nRoute LLM version\n"+route_url
+        except:
+            pass    
+        
+        print(response_data)
         response_data["audio"] = filepath
-        response_data["message"] = response_data["message"]+"\n\nRoute LLM version\n"+route_url
         return jsonify(response_data)
 
     except Exception as e:
