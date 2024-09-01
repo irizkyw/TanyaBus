@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Rute Bus dengan KML di Google Maps</title>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCMStVxIAgJETgmkls2wGVe_VU-YCscJIU"></script>
+        <script>
+            function initMap() {
+                var map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 12,
+                    center: { lat: -6.2, lng: 106.816666 },
+                });
+
+                var kmlLayer = new google.maps.KmlLayer({
+                    url: "https://drive.google.com/file/d/1weKtaUsIex_7Yzr6kbY_X69aGFuLCdSV/view?usp=sharing",
+                    map: map,
+                });
+
+                kmlLayer.addListener("status_changed", function () {
+                    console.log("KML Layer Status: ", kmlLayer.getStatus());
+                });
+            }
+        </script>
+    </head>
+    <body onload="initMap()">
+        <div id="map" style="height: 500px; width: 100%"></div>
+    </body>
+</html>
