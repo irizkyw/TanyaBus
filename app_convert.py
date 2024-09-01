@@ -41,6 +41,7 @@ def initialize_model():
             "informasi kepadatan lalu lintas, serta menjadi pemandu wisata virtual multibahasa. "
             "Jangan Menggunakan Kendaraan Pribadi atau Transportasi Online" 
             "Pastikan menggunakan transportasi umum atau berjalan kaki. "
+            "Berikaa hanya satu saran saja"
             "Berikut adalah informasi tentang berbagai rute transportasi yang dapat Anda berikan: "
             "K1 - TRANS METRO BANDUNG KORIDOR 1: Cibiru - Cibeureum; "
             "K2 - TRANS METRO BANDUNG KORIDOR 2: Cicaheum - Cibeureum; "
@@ -70,6 +71,7 @@ def call_alibaba_model(prompt):
             result_format='message',
             stream=True,
             incremental_output=True,
+            appid='de57c1b7da8a4985994fcc2b81e5be8f',
             api_key=apikeyALI
         )
         
@@ -183,6 +185,54 @@ def extract_location(prompt):
     places = re.findall(pattern, response)
     return [place.strip() for place in places[0].split("', '")] if places else []
 
+def coordinateRouteResponse(response, place):
+    # Extract places from the response
+    places = extract_location(response)
+    
+    # Remove duplicates
+    unique_places = list(set(places))
+    
+    # Ensure the specific place is at the beginning or end
+    if place[0] in unique_places:
+        unique_places.remove(place[0])
+    unique_places.insert(0, place[0])
+
+    try:
+        if place[1] in unique_places:
+            unique_places.remove(place[1])
+        unique_places.append(place[1])
+    except:
+        pass
+    
+    # Get coordinates for each place
+    coordinates_list = []
+    for loc in unique_places:
+        lat, lng = get_lat_lng(loc + " Bandung")
+        if lat and lng:
+            coordinates_list.append((loc, lat, lng))
+    
+    return coordinates_list
+
+def generate_route_url_waypoint(places_with_coords, api_key):
+    # Check if the list has at least two places
+    if len(places_with_coords) < 2:
+        return "Not enough places to generate a route."
+
+    # Construct the origin and destination from the first and last places
+    origin = f"{places_with_coords[0][1]},{places_with_coords[0][2]}"
+    destination = f"{places_with_coords[-1][1]},{places_with_coords[-1][2]}"
+
+    # Create the waypoints by joining the places in between
+    waypoints = "|".join([f"{place[1]},{place[2]}" for place in places_with_coords[1:-1]])
+
+    # Generate the Google Maps URL
+    route_url = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=walking"
+
+    if waypoints:
+        route_url += f"&waypoints={waypoints}"
+
+    return route_url
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -255,7 +305,14 @@ def chat():
         filepath = os.path.join("static", "audio", filename)
         tts.save(filepath)
 
+        coordinat_list = coordinateRouteResponse(response, places)
+        print(coordinat_list)
+        route_url = generate_route_url_waypoint(coordinat_list, os.getenv("GOOGLE_MAPS_API_KEY"))
+        response_data["route_url"] = route_url
+        print(route_url)
+
         response_data["audio"] = filepath
+        response_data["message"] = response_data["message"]+"/n"+coordinat_list+"/n"+route_url
         return jsonify(response_data)
 
     except Exception as e:
