@@ -311,7 +311,6 @@ def chat():
             coordinat_list = coordinateRouteResponse(response, places)
             route_url = generate_route_url_waypoint(coordinat_list, os.getenv("GOOGLE_MAPS_API_KEY"))
             response_data["route_url"] = route_url
-            response_data["message"] += "\n\nRoute LLM version\n"+route_url
         except:
             pass    
         
