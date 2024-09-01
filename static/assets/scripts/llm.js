@@ -110,6 +110,11 @@ async function handleServerResponse(messageDiv, uniqueId, prompt) {
 
     await typeText(messageDiv, result.message);
 
+    if (result.route_url) {
+      const hyperlink = `<a href="${result.route_url}" target="_blank">Route Gen-AI version</a>`;
+      messageDiv.innerHTML += hyperlink;
+    }
+
     if (result.show_map) {
       const mapContainerId = generateUniqueId();
       const mapContainer = `<div id="${mapContainerId}" class="map-container"></div>`;
