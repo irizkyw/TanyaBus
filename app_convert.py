@@ -223,10 +223,13 @@ def generate_route_url_waypoint(places_with_coords, api_key):
     destination = f"{places_with_coords[-1][1]},{places_with_coords[-1][2]}"
 
     # Create the waypoints by joining the places in between
-    waypoints = "|".join([f"{place[1]},{place[2]}" for place in places_with_coords[1:-1]])
+    if len(places_with_coords) > 2:
+        waypoints = "|".join([f"{place[1]},{place[2]}" for place in places_with_coords[1:-1]])
+    else:
+        waypoints = ""
 
     # Generate the Google Maps URL
-    route_url = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=walking"
+    route_url = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=transit"
 
     if waypoints:
         route_url += f"&waypoints={waypoints}"
@@ -312,7 +315,7 @@ def chat():
         print(route_url)
 
         response_data["audio"] = filepath
-        response_data["message"] = response_data["message"]+"/n"+coordinat_list+"/n"+route_url
+        response_data["message"] = response_data["message"]+"\n\nRoute LLM version\n"+route_url
         return jsonify(response_data)
 
     except Exception as e:
