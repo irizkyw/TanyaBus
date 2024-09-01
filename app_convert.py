@@ -207,7 +207,8 @@ def chat():
 
     print(f"Extracted places: {places}")
     response_text = (
-        #f"Data Kendaraan Umum Real Time:\n{vehicles_data}\n\n"
+        # f"Data Kendaraan Umum Saat ini:\n{vehicles_data}\n\n"
+        # f"Main Places : {places}\n\n"
         #f"Kondisi Sekitar kita: {get_traffic_condition(api_key, latitude, longitude, latitude + 0.0001, longitude + 0.0001)}\n\n"
         #f"Kendaraan Terdekat:\n{nearest_vehicle}\n\n"
         f"Prompt: {user_input}"
